@@ -1,10 +1,12 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using USITools;
+using UnityEngine;
 
 namespace KolonyTools
 {
-    public class ModuleBulkConverter : ModuleResourceConverter
+    public class ModuleBulkConverter : ModuleResourceConverter_USI
     {
         [KSPField] 
         public float Yield = 1f;
@@ -12,29 +14,73 @@ namespace KolonyTools
         [KSPField] 
         public float MinAbundance = 0f;
 
-        private List<ResourceRatio> GetPlanetResourceList(List<string> inputs)
+        private static List<string> _blackList = new List<string>{"Dirt","ResourceLode"};
+
+        private int _lastLoadedPlanet = -1;
+
+        private List<ResourceRatio> _resourceYields;
+
+        private void LoadPlanetYields(List<ResourceRatio> inputs)
         {
-            var prs = new List<ResourceRatio>();
-            var resList = ResourceCache.Instance.AbundanceCache.Where(a => a.BodyId == vessel.mainBody.flightGlobalsIndex
-                                                                           && a.HarvestType == HarvestTypes.Planetary);
+            _lastLoadedPlanet = vessel.mainBody.flightGlobalsIndex;
+            List<string> inputResourcesNames = GetResourceNames(inputs);
+            Dictionary<string, double> planetResourceAbundance = GetResourceAbundance(vessel.mainBody.flightGlobalsIndex, inputResourcesNames);
 
-            var resNames = ResourceMap.Instance.FetchAllResourceNames(HarvestTypes.Planetary);
+            var totalAbundance = planetResourceAbundance.Sum(r => r.Value);
 
-            var allRes = resNames.Where(rn => !inputs.Contains(rn));
-            foreach (var res in allRes)
+            _resourceYields = new List<ResourceRatio>();
+            foreach (var res in planetResourceAbundance)
             {
-                var abundanceList = resList.Where(rn => rn.ResourceName == res);
-                if (abundanceList.Any())
+                if (res.Value > MinAbundance)
                 {
-                    var abundance = abundanceList.Average(ra => ra.Abundance);
-                    if (abundance > MinAbundance)
-                    {
-                        print(String.Format("Adding {0} {1} ",abundance,res));
-                        prs.Add(new ResourceRatio { FlowMode = ResourceFlowMode.ALL_VESSEL, Ratio = abundance * Yield, ResourceName = res, DumpExcess = true });
-                    }
+                    var resourceYield =  Yield * res.Value / totalAbundance;
+                    _resourceYields.Add(new ResourceRatio {
+                        FlowMode = ResourceFlowMode.ALL_VESSEL,
+                        Ratio = resourceYield,
+                        ResourceName = res.Key,
+                        DumpExcess = true });
                 }
             }
-            return prs;
+        }
+
+        private static Dictionary<string, double> GetResourceAbundance(int planetBodyIndex, List<string> inputResourcesNames)
+        {
+            Dictionary<string, double> planetResourceAbundance = new Dictionary<string, double>();
+            foreach (var res in ResourceCache.Instance.AbundanceCache)
+            {
+                if (res.BodyId == planetBodyIndex)
+                {
+                    if (inputResourcesNames.Contains(res.ResourceName))
+                        continue;
+                    if (_blackList.Contains(res.ResourceName))
+                        continue;
+
+                    if (!planetResourceAbundance.ContainsKey(res.ResourceName))
+                        planetResourceAbundance.Add(res.ResourceName, 0d);
+
+                    planetResourceAbundance[res.ResourceName] += res.Abundance;
+                }
+            }
+            return planetResourceAbundance;
+        }
+
+        private List<string> GetResourceNames(List<ResourceRatio> inputs)
+        {
+            var resNames = new List<string>();
+            var count = inputs.Count;
+            for (int i = 0; i < count; ++i)
+            {
+                resNames.Add(inputs[i].ResourceName);                
+            }
+            return resNames;
+        }
+
+        private void CheckYieldsAreLoaded(List<ResourceRatio> inputs)
+        {
+            if (vessel.mainBody.flightGlobalsIndex != _lastLoadedPlanet || _resourceYields == null)
+            {
+                LoadPlanetYields(inputs);
+            }
         }
 
         protected override ConversionRecipe PrepareRecipe(double deltatime)
@@ -43,7 +89,17 @@ namespace KolonyTools
                 return new ConversionRecipe();
 
             var recipe = base.PrepareRecipe(deltatime);
-            recipe.Outputs.AddRange(GetPlanetResourceList(recipe.Outputs.Select(o=>o.ResourceName).ToList()));
+
+            CheckYieldsAreLoaded(recipe.Inputs);
+            var staticOutputs = GetResourceNames(recipe.Outputs);
+
+            var count = _resourceYields.Count;
+            for (int i = 0; i < count; ++i)
+            {
+                var resourceOutput = _resourceYields[i];
+                if (!staticOutputs.Contains(resourceOutput.ResourceName))
+                    recipe.Outputs.Add(new ResourceRatio(resourceOutput.ResourceName, resourceOutput.Ratio, true));
+            }
             return recipe;
         }
     }

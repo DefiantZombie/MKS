@@ -55,19 +55,24 @@
     </Reference>
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="AC\CustomAstronautComplexUI.cs" />
+    <Compile Include="AC\CustomAstronautComplexUISpawner.cs" />
+    <Compile Include="AC\EditACPrefab.cs" />
+    <Compile Include="AC\EditACPrefabs_Editor.cs" />
+    <Compile Include="AC\Kolonist.cs" />
+    <Compile Include="AC\EditACPrefabsSpaceCentre.cs" />
     <Compile Include="AddScenarioModules.cs" />
-    <Compile Include="Experience\AgronomySkill.cs" />
-    <Compile Include="Experience\BotanySkill.cs" />
-    <Compile Include="Experience\FundsBoost.cs" />
-    <Compile Include="Experience\GeologySkill.cs" />
-    <Compile Include="Experience\LogisticsSkill.cs" />
-    <Compile Include="Experience\MedicalSkill.cs" />
-    <Compile Include="Experience\RepBoost.cs" />
-    <Compile Include="Experience\ScienceBoost.cs" />
     <Compile Include="Kolonization\KolonizationConfig.cs" />
     <Compile Include="Kolonization\KolonizationSetup.cs" />
+    <Compile Include="Kolonization\KolonyInventory.cs" />
+    <Compile Include="Kolonization\ManualLocalLogistics.cs" />
+    <Compile Include="KolonyOptions\RescueKerbalFilter.cs" />
+    <Compile Include="KolonyOptions\KolonyACOptions.cs" />
     <Compile Include="MksAutoRepair.cs" />
     <Compile Include="ModuleColonyRewards.cs" />
+    <Compile Include="ModuleGroundPylon.cs" />
+    <Compile Include="ModuleResourceLode.cs" />
+    <Compile Include="ModuleResourceSurveyor.cs" />
     <Compile Include="OrbitalLogistics\ComboBox.cs" />
     <Compile Include="OrbitalLogistics\MKSGui.cs" />
     <Compile Include="OrbitalLogistics\MKSLExtensions.cs" />
@@ -88,25 +93,22 @@
     <Compile Include="PlanetaryLogistics\ModulePlanetaryLogistics.cs" />
     <Compile Include="PlanetaryLogistics\PlanetaryLogisticsEntry.cs" />
     <Compile Include="PlanetaryLogistics\PlanetaryLogisticsManager.cs" />
-    <Compile Include="PlanetaryLogistics\PlanetaryLogisticsMonitor.cs" />
     <Compile Include="PlanetaryLogistics\PlanetaryLogisticsPersistance.cs" />
     <Compile Include="PlanetaryLogistics\PlanetaryLogisticsScenario.cs" />
     <Compile Include="ModuleEfficiencyPart.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="SpaceAcademy.cs" />
-    <Compile Include="StationManager\StationManager.cs" />
+    <None Include="StationManager\StationManager.old" />
     <Compile Include="Utilities.cs" />
     <Compile Include="OrbitalLogistics\Window.cs" />
   </ItemGroup>
   <ItemGroup>
     <WCFMetadata Include="Service References\" />
   </ItemGroup>
-  <ItemGroup>
-    <Folder Include="KolonySettings\" />
-  </ItemGroup>
+  <ItemGroup />
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <PropertyGroup>
-    <PostBuildEvent>"D:\Games\pdb2mdb\pdb2mdb.exe" "$(TargetFileName)"</PostBuildEvent>
+    <PostBuildEvent Condition="'$(OS)' != 'Unix'">"D:\Games\pdb2mdb\pdb2mdb.exe" "$(TargetFileName)"</PostBuildEvent>
   </PropertyGroup>
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it.
 Other similar extension points exist, see Microsoft.Common.targets.
